@@ -5,15 +5,6 @@ colors = ['black', 'white', 'red', 'green', 'blue', 'yellow']
 shapes = ['circle', 'square', 'triangle', 'cross', 'star', 'clover']
 counts = range(1, 7)
 
-rgb = {
-    'black':    '#222',
-    'white':    '#fff',
-    'red':      '#f33',
-    'green':    '#0c0',
-    'blue':     '#36f',
-    'yellow':   '#ff0'
-}
-
 card_width = 57
 card_height = 89
 
@@ -25,69 +16,71 @@ label_height = label_width * 2
 
 scale_factor = 0.878
 
-spacing = 16.9 * 2 * 1.5
-
 def merge(list, separator):
-	return reduce(lambda x, y: x + separator + y, list)
-    
-def shape_svg(shape):
-    if shape == 'circle': 
-        return '''
-        <circle id="circle" cx="0" cy="0" r="16.9"/>
-        '''
-    elif shape == 'square':
-        return '''
-        <rect id="square" x="-15" y="-15" height="30" width="30"/>
-        '''
-    elif shape == 'triangle':
-        return '''
-        <g id="triangle" transform="scale(26.3)" stroke-width="0.038">
-            <polygon points="
-                 -0.866,0.5  0.866,0.5  0,-1
-            "/>
-        </g>
-        '''
-    elif shape == 'cross':
-        return '''
-        <g id="cross" transform="scale(6.71)" stroke-width="0.14">
-            <polygon points="
-                 3, 1  1, 1  1, 3
-                -1, 3 -1, 1 -3, 1
-                -3,-1 -1,-1 -1,-3
-                 1,-3  1,-1  3,-1
-            "/>
-        </g>
-        '''
-    elif shape == 'star':
-        return '''
-        <g id="star" transform="scale(28.3)" stroke-width="0.035">
-            <polygon points="
-                 0    ,-1
-                 0.226,-0.309
-                 0.951,-0.309
-                 0.363, 0.118
-                 0.588, 0.809
-                 0    , 0.382 
-                -0.588, 0.809
-                -0.363, 0.118
-                -0.951,-0.309
-                -0.226,-0.309
-            "/>
-        </g>
-        '''
-    elif shape == 'clover':
-        return '''
-        <g id="clover" transform="scale(10.1)" stroke-width="0.10">
-            <path d="
-                M 0,1
-                A 1,1 0 1,1 -0.866,-0.5
-                A 1,1 0 1,1  0.866,-0.5
-                A 1,1 0 1,1  0    , 1  
-                z
-            "/>
-        </g>
-        '''
+    return reduce(lambda x, y: x + separator + y, list)
 
+def coords(range, angle):
+    return f"{range * cos(2 * pi * angle) : >7.3f}, {range * sin(-2 * pi * angle) : >7.3f}"
+
+color_rgb = {
+    'black':    '#222',
+    'white':    '#fff',
+    'red':      '#f33',
+    'green':    '#0c0',
+    'blue':     '#36f',
+    'yellow':   '#ff0'
+}
+
+s = shape_area
+
+circle_r = sqrt(s / pi)
+
+square_a = sqrt(s)
+square_r = square_a / sqrt(2)
+
+triangle_a = sqrt(s / (sqrt(3) / 4))
+triangle_r = triangle_a / sqrt(3)
+
+cross_a = sqrt(s / 5)
+cross_r = cross_a / sqrt(2)
+
+star_a = 2 * sqrt(s / 5 / (1 / tan(pi * 0.2) - 1 / tan(pi * 0.3)))
+star_r2 = (star_a / 2) / sin(pi * 0.2)
+star_r1 = s / 5 / (star_a / 2)
+
+clover_r = sqrt(s / (2 * pi + 6 * sqrt(3) / 4))
+   
+shape_def = {
+    'circle': f'<circle cx="0" cy="0" r="{circle_r :.3f}"/>',
+    'square': '''<polygon points="
+                ''' + merge([coords(square_r, (i + 0.5) / 4) for i in range(4)], '''
+                ''') + '''
+            "/>''',
+    'triangle': '''<polygon points="
+                ''' + merge([coords(triangle_r, i / 3 + 0.25) for i in range(3)], '''
+                ''') + '''
+            "/>''',
+    'cross': '''<polygon points="
+                ''' + merge([
+                    f'{cross_r * cos(pi * (a + 0.5) / 2) * (3 if (a % 2) * 2 == b else 1) : 7.3f}, '
+                    f'{cross_r * sin(-pi * (a + 0.5) / 2) * (3 if (a % 2) * 2 == 2 - b else 1) : 7.3f}'
+                    for a in range(4) for b in range(3)], '''
+                ''') + '''
+            "/>''',
+    'star': '''<polygon points="
+                ''' + merge([coords(star_r2 if i % 2 == 0 else star_r1, i / 10 + 0.25) for i in range(10)], '''
+                ''') + '''
+            "/>''',
+    'clover': f'''<path d="
+                M {coords(clover_r, 0 - 0.25)}
+                ''' + merge([f"A {clover_r : 7.3f}, {clover_r : 7.3f} 0 1 0 " + coords(clover_r, (i + 1) / 3 - 0.25) for i in range(3)], '''
+                ''') + '''
+                z
+            "/>'''
+}
+        
+spacing = circle_r * 3
+        
 layout_grid = [
     [],
     [(0, 0)],
@@ -107,10 +100,10 @@ for color in colors:
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="{card_width}mm" height="{card_height}mm" viewBox="{-card_width / 2 :.1f} {-card_height / 2 :.1f} {card_width} {card_height}">
     <defs>
         <g id="shape" transform="scale({scale_factor :.3f})">
-        {shape_svg(shape)}
+            {shape_def[shape]}
         </g>
     </defs>
-    <g fill="{rgb[color]}" stroke="black" stroke-width="1">
+    <g fill="{color_rgb[color]}" stroke="black" stroke-width="1">
         <g id="labels">
             <g id="label" transform="translate({-(card_width - label_width) / 2 :.1f}, {-(card_height - label_height) / 2 :.1f}) scale({1 / 6 :.3f})">
                 <text x="0" y="0" font-size="{6 * label_width}" text-anchor="middle" font-family="arial">{count}</text>
