@@ -7,14 +7,12 @@ counts = range(1, 7)
 
 card_width = 57
 card_height = 89
+base_stroke = 0.75
 
 card_area = card_width * card_height
-shape_area = card_area / 6
-
-label_width = 10
-label_height = label_width * 2
-
-scale_factor = 0.878
+shape_area = card_area / 10
+label_scale = 1 / 5
+label_size = sqrt(shape_area) * label_scale * 2.2
 
 def merge(list, separator):
     return reduce(lambda x, y: x + separator + y, list)
@@ -79,7 +77,7 @@ shape_def = {
             "/>'''
 }
         
-spacing = circle_r * 3
+spacing = circle_r * 3.5
         
 layout_grid = [
     [],
@@ -99,20 +97,20 @@ for color in colors:
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="{card_width}mm" height="{card_height}mm" viewBox="{-card_width / 2 :.1f} {-card_height / 2 :.1f} {card_width} {card_height}">
     <defs>
-        <g id="shape" transform="scale({scale_factor :.3f})">
+        <g id="shape">
             {shape_def[shape]}
         </g>
     </defs>
-    <g fill="{color_rgb[color]}" stroke="black" stroke-width="1">
+    <g fill="{color_rgb[color]}" stroke="black" stroke-width="{base_stroke}">
         <g id="labels">
-            <g id="label" transform="translate({-(card_width - label_width) / 2 :.1f}, {-(card_height - label_height) / 2 :.1f}) scale({1 / 6 :.3f})">
-                <text x="0" y="0" font-size="{6 * label_width}" text-anchor="middle" font-family="arial">{count}</text>
-                <use xlink:href="#shape" transform="translate(0, {3 * label_width})"/>
+            <g id="label" transform="translate({-(card_width - label_size) / 2 :.1f}, {-(card_height - label_size * 2) / 2 :.1f})">
+                <text x="0" y="0" font-size="{label_size :.1f}" stroke-width="{base_stroke * label_scale :.3f}" text-anchor="middle" font-family="arial">{count}</text>
+                <use xlink:href="#shape" transform="translate(0, {label_size / 2 :.1f}) scale({label_scale :.3f})"/>
             </g>
-            <use xlink:href="#label" transform="translate({card_width - label_width :.1f})"/>
+            <use xlink:href="#label" transform="translate({card_width - label_size :.1f})"/>
         </g>
         <use xlink:href="#labels" transform="rotate(180)"/>
-        <g id="layout" transform="scale({scale_factor * sqrt(1 / count) :.3f})">
+        <g id="layout" transform="scale({sqrt(1 / count) :.3f})">
             ''' + merge([
                 f'<use xlink:href="#shape" transform="translate({dx * spacing :.1f}, {dy * spacing :.1f})"/>'
                 for (dx, dy) in layout_grid[count]
