@@ -1,2 +1,2 @@
 # universal-playing-cards
-Universal Playing Cards Generator
+Universal Playing Cards - Deck Generator
